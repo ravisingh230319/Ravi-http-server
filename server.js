@@ -1,42 +1,32 @@
-const http = require('http');
-const fs = require('fs');
-const { v4: uuidv4 } = require('uuid');
+const { v4: uuidv4 } = require("uuid");
+const path = require("path");
+const express = require("express");
+const app = express();
 
-const server = http.createServer((req, res) => {
-    const url = req.url;
-    const urlArray = url.split('/');
-    console.log(url);
-    if (url === '/html') {
-        fs.readFile('./index.html', (err, data) => {
-            res.writeHead(200, { 'Content-Type': 'text/html' });
-            res.write(data);
-            res.end();
-        });
-    } else if (url === '/json') {
-        fs.readFile('./input.json', (err, data) => {
-            res.writeHead(200, { 'Content-Type': 'text/json' });
-            res.write(data);
-            res.end();
-        });
-    } else if (url === '/uuid') {
-        res.writeHead(200, { 'Content-Type': 'text/json' });
-        res.write(JSON.stringify({ uuid: uuidv4() }));
-        res.end();
-    } else if (url === '/status/' + urlArray[2]) {
-        res.writeHead(urlArray[2], { 'Content-Type': 'text/html' });
-        res.write(`<h2>${urlArray[2]}</h2>`);
-        res.end();
-    } else if (url === '/delay/' + urlArray[2]) {
-        setTimeout(() => {
-            res.writeHead(200, { 'Content-Type': 'text/html' });
-            res.write(`<h2>Delayed by ${urlArray[2]} seconds</h2>`);
-            res.end();
-        }, urlArray[2] * 1000);
-    } else {
-        res.writeHead(404, { 'Content-Type': 'text/html' });
-        res.write(`<h2>404 Page Not Found</h2>`);
-        res.end();
-    }
+app.get("/html", (req, res) => {
+    res.sendFile(path.join(__dirname, "index.html"));
 });
 
-server.listen(3000, () => console.log('Listening on port 3000'));
+app.get("/json", (req, res) => {
+    res.sendFile(path.join(__dirname, "input.json"));
+});
+
+app.get("/uuid", (req, res) => {
+    res.json({ uuid: uuidv4() });
+});
+
+app.get("/status/:statusCode", (req, res) => {
+    res.status(req.params.statusCode).send(`<h2>${req.params.statusCode}</h2>`);
+});
+
+app.get("/delay/:delayedSec", (req, res) => {
+    setTimeout(() => {
+        res.send(`<h2>Delayed by ${req.params.delayedSec} seconds</h2>`);
+    }, req.params.delayedSec * 1000);
+});
+
+app.get("*", (req, res) => {
+    res.status(404).send(`<h2>404 Page Not Found</h2>`);
+});
+
+app.listen(3000, () => console.log("Listening on port 3000"));
